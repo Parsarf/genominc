@@ -1,0 +1,6 @@
+{
+  "name": "genominc-site",
+  "private": true,
+  "description": "Static website for Genominc with one serverless function (api/inquiry.js).",
+  "engines": { "node": ">=20" }
+}
