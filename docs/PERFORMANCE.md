@@ -109,3 +109,11 @@ Load-time long tasks (ms): before [201, 69, 204, 141, 119], after [54].
   it is not reproduced in later cycles or at 4×/6×.
 * DevTools trace files were not retained; the JSON metrics above are the record.
 * No Web Worker / OffscreenCanvas was added: script time is 2–5 % of the frame, so measurement did not justify it.
+
+## Update: particle field replaced by an SVG specimen plate
+The About-section canvas (`molecular.js`, up to 1,600 particles morphing into an analyser, capsule and paw) was removed.
+Its replacement (`assets/js/plate.js`, SVG + CSS) has no canvas and no `requestAnimationFrame` loop: strokes trace in with
+`stroke-dashoffset` transitions, the frame rotates/scans with CSS animations that are paused while the plate is off screen,
+and tab autoplay is driven by a CSS progress animation (`animationend`). The numbers above describe the old field and are
+kept as the historical baseline; `tools/levels.cjs` and `tools/forms.cjs` (which measured it) were deleted with it.
+Reduced motion: no animations and no autoplay; tabs still switch figures.

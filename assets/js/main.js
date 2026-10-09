@@ -1,6 +1,6 @@
 import { Scheduler } from "./scheduler.js";
 import { createHelix } from "./helix.js";
-import { createMolecular } from "./molecular.js";
+import { createPlate } from "./plate.js";
 import { initForm } from "./form.js";
 
 // Guard against double initialisation (bfcache restores, accidental double includes).
@@ -15,15 +15,11 @@ if (!window.__genominc) {
   /* ---------- animation ---------- */
   const scheduler = new Scheduler();
   const helixEl = document.getElementById("helix");
-  const molEl = document.getElementById("mol");
+  const plateEl = document.getElementById("plate");
   const anim = {
     scheduler,
     helix: helixEl && createHelix(helixEl, scheduler, { reduced, scroll }),
-    mol: molEl && createMolecular(molEl, scheduler, {
-      reduced, fine,
-      captionK: document.getElementById("molK"),
-      captionV: document.getElementById("molV"),
-    }),
+    plate: plateEl && createPlate(plateEl, { reduced, fine }),
   };
   window.__genominc = anim; // exposed for the performance harness and manual inspection
 

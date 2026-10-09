@@ -187,16 +187,79 @@ p{color:var(--muted);text-wrap:pretty}
 /* ---------------- About ---------------- */
 .about{background:var(--mist);border-block:1px solid var(--line)}
 .about-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(32px,6vw,88px);align-items:center}
-.stage{position:relative}
-.stage canvas{
-  display:block;width:100%;aspect-ratio:1/1;max-height:560px;
-  background:#fff;border:1px solid var(--line);border-radius:var(--r);
+/* Specimen plate: line drawings that trace themselves (all motion is CSS; see assets/js/plate.js) */
+.plate{
+  position:relative;overflow:hidden;background:#fff;
+  border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 1px 0 rgba(1,45,123,.04),0 28px 60px -34px rgba(1,45,123,.35);
 }
-.stage-cap{
-  position:absolute;left:18px;bottom:16px;
-  font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+.plate-panel{
+  position:relative;aspect-ratio:1/1;
+  background:radial-gradient(circle at 1px 1px,#D5E1EF 1px,transparent 1.6px) 0 0/22px 22px;
 }
-.stage-cap b{color:var(--navy);font-family:var(--f-head);letter-spacing:.02em;text-transform:none;font-size:.86rem;margin-left:6px}
+.plate-svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:hidden}
+
+/* frame */
+.plate .ticks{fill:none;stroke:#9FB3CB;stroke-width:1}
+.plate .ring{fill:none;stroke:#C5D3E4;stroke-width:1}
+.plate .cross{fill:none;stroke:#9FB3CB;stroke-width:1}
+.plate .corner{fill:none;stroke:#9FB3CB;stroke-width:1.2}
+.plate .orbit{fill:none;stroke:var(--blue);stroke-opacity:.4;stroke-width:1;stroke-dasharray:1.5 7;stroke-linecap:round;
+  transform-box:view-box;transform-origin:240px 240px;animation:plate-spin 160s linear infinite}
+.plate .arc{fill:none;stroke:var(--cyan);stroke-width:2;stroke-linecap:round;
+  transform-box:view-box;transform-origin:240px 240px;animation:plate-spin 48s linear infinite reverse}
+.plate .scan{animation:plate-scan 7s cubic-bezier(.45,0,.55,1) infinite}
+.plate:not(.live) .orbit,.plate:not(.live) .arc,.plate:not(.live) .scan{animation-play-state:paused}
+@keyframes plate-spin{to{transform:rotate(360deg)}}
+@keyframes plate-scan{from{transform:translateY(0)}to{transform:translateY(550px)}}
+.plate .frame-b{transform:translate(calc(var(--px,0)*-3px),calc(var(--py,0)*-3px));transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+
+/* figures */
+.plate .fig{opacity:0;pointer-events:none;transition:opacity .3s ease}
+.plate .fig.on{opacity:1}
+.plate .art{transform:translate(calc(var(--px,0)*7px),calc(var(--py,0)*7px));transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+.plate .notes{transform:translate(calc(var(--px,0)*3.5px),calc(var(--py,0)*3.5px));transition:transform .6s cubic-bezier(.2,.7,.2,1),opacity .5s ease}
+.plate .d{fill:none;stroke:var(--navy);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.plate .d.c{stroke:var(--cyan)}
+.plate .f{fill:var(--cyan);fill-opacity:.14;stroke:none}
+.plate .led{fill:var(--cyan)}
+.plate .lead{fill:none;stroke:var(--blue);stroke-opacity:.6;stroke-width:1}
+.plate .pin{fill:var(--blue)}
+.plate .lbl{font:500 12.5px var(--f-body);letter-spacing:.01em;fill:var(--navy);paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round}
+
+/* with JS: strokes trace in, then fills and annotations settle */
+.plate.js .d{stroke-dasharray:1 2;stroke-dashoffset:1.02;transition:stroke-dashoffset .3s ease}
+.plate.js .fig.on .d{stroke-dashoffset:0;transition:stroke-dashoffset 1.2s cubic-bezier(.65,0,.35,1) calc(var(--i,0)*55ms + 120ms)}
+.plate.js .f,.plate.js .led{opacity:0;transition:opacity .3s ease}
+.plate.js .fig.on .f,.plate.js .fig.on .led{opacity:1;transition:opacity .7s ease 1.3s}
+.plate.js .notes{opacity:0}
+.plate.js .fig.on .notes{opacity:1;transition:transform .6s cubic-bezier(.2,.7,.2,1),opacity .6s ease 1.5s}
+
+/* caption row and tabs */
+.plate-cap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 20px;padding:2px 20px 2px 22px;border-top:1px solid var(--line);background:#fff}
+.plate-fig{display:flex;align-items:baseline;gap:10px;font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);transition:opacity .16s ease}
+.plate-fig b{font-family:var(--f-head);font-size:1rem;font-weight:600;letter-spacing:-.01em;text-transform:none;color:var(--navy)}
+.plate.swap .plate-fig{opacity:0}
+.plate-cap .text-link{margin-top:0;font-size:.93rem}
+.plate-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);background:var(--mist)}
+.plate-tab{
+  position:relative;display:flex;align-items:baseline;gap:10px;min-height:52px;padding:14px 18px;
+  background:none;border:0;border-left:1px solid var(--line);border-radius:0;text-align:left;cursor:pointer;
+  transition:background-color .2s;
+}
+.plate-tab:first-child{border-left:0}
+.plate-tab:hover{background:#fff}
+.plate-tab:focus-visible{outline-offset:-4px}
+.pt-n{font-family:var(--f-head);font-weight:600;font-size:.82rem;color:var(--cyan);transition:color .2s}
+.pt-l{font-weight:600;font-size:.93rem;color:var(--muted);transition:color .2s}
+.plate-tab.is-on{background:#fff}
+.plate-tab.is-on .pt-l{color:var(--navy)}
+.plate-tab::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--navy);transform:scaleX(0);transform-origin:left}
+.plate-tab.is-on::after{transform:scaleX(1)}
+.plate.auto .plate-tab.is-on::after{transform:scaleX(0);animation:plate-progress 7s linear forwards;animation-play-state:paused}
+.plate.auto.live:not(.hold) .plate-tab.is-on::after{animation-play-state:running}
+@keyframes plate-progress{to{transform:scaleX(1)}}
+
 .about-copy p{margin-top:18px;font-size:1.05rem}
 .points{margin-top:30px;display:grid;gap:0}
 .points li{padding:16px 0 16px 20px;border-top:1px solid var(--line);position:relative}
@@ -300,7 +363,7 @@ footer{background:var(--navy-deep);color:rgba(255,255,255,.75);padding:56px 0 28
   .hero-grid,.about-grid,.contact-grid{grid-template-columns:minmax(0,1fr)}
   .supply-grid{grid-template-columns:minmax(0,1fr);gap:40px}
   .steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:36px 0}
-  .stage canvas{aspect-ratio:4/3;max-height:440px}
+  .plate-panel{aspect-ratio:5/4}
 }
 @media (max-width:860px){
   .burger{display:grid;margin-left:0}
@@ -318,12 +381,17 @@ footer{background:var(--navy-deep);color:rgba(255,255,255,.75);padding:56px 0 28
 }
 @media (max-width:600px){
   :root{--nav-h:64px}
+  .plate-tab{flex-direction:column;gap:2px;padding:12px 12px}
+  .plate-cap{padding:6px 16px}
   .brand img{height:28px}
   .hero-actions .btn{flex:1 1 100%}
   .hero .eyebrow{font-size:.72rem;letter-spacing:.1em}
   .steps,.fgrid{grid-template-columns:minmax(0,1fr)}
   .step{padding-right:0}
   .f-legal{gap:18px}
+}
+@media (max-width:440px){
+  .plate .notes{display:none}
 }
 @media (max-width:360px){
   .brand img{height:24px}
@@ -334,6 +402,8 @@ footer{background:var(--navy-deep);color:rgba(255,255,255,.75);padding:56px 0 28
   html{scroll-behavior:auto}
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
   .reveal-on .rv{opacity:1;transform:none}
+  .plate *,.plate *::after{animation:none!important}
+  .plate .art,.plate .notes,.plate .frame-b{transform:none!important}
 }
 
 /* Legal page header */

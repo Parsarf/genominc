@@ -4,7 +4,7 @@
  *   NODE_PATH=<dir with playwright> node tools/perf.cjs <url> <label> [cpuRate]
  *
  * Runs the same scenarios against any build so before/after numbers are comparable.
- * Expects the page to expose canvases #helix (page background) and #mol (About section).
+ * Expects the page to expose canvases #helix (page background) and #plate (About section, SVG specimen plate).
  * Output: JSON to stdout. Frame times come from a harness-owned rAF probe; main-thread
  * cost comes from CDP Performance.getMetrics; long tasks from PerformanceObserver.
  */
@@ -93,10 +93,10 @@ function stats(d) {
   await page.waitForTimeout(600);
   await scenario("hero_idle_6s", 6000);
 
-  // 2. molecular field centred in view
-  await scrollToEl("#mol", 120);
+  // 2. specimen plate centred in view
+  await scrollToEl("#plate", 120);
   await page.waitForTimeout(800);
-  await scenario("molecular_idle_10s", 10000);
+  await scenario("plate_idle_10s", 10000);
 
   // 3. full-page scroll top -> bottom -> top, 4s each way, stepped wheel input
   await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
@@ -113,16 +113,16 @@ function stats(d) {
   await scenario("scroll_down_full_page", 4500, scrollRun(1));
   await scenario("scroll_up_full_page", 4500, scrollRun(-1));
 
-  // 4. repeated entry/exit of the molecular section (observer churn)
+  // 4. repeated entry/exit of the plate section (observer churn)
   await scenario("repeat_section_entry_x8", 6000, async () => {
     for (let i = 0; i < 8; i++) {
-      await scrollToEl("#mol", 120); await page.waitForTimeout(300);
+      await scrollToEl("#plate", 120); await page.waitForTimeout(300);
       await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" })); await page.waitForTimeout(300);
     }
   });
 
-  // 5. tab hide/show (emulated visibility) while the molecular section is on screen
-  await scrollToEl("#mol", 120);
+  // 5. tab hide/show (emulated visibility) while the plate section is on screen
+  await scrollToEl("#plate", 120);
   await page.waitForTimeout(500);
   const hide = (h) => page.evaluate((hidden) => {
     Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
@@ -142,19 +142,19 @@ function stats(d) {
   await page.waitForTimeout(500);
   await scenario("footer_both_offscreen_3s", 3000);
 
-  // 7. resize storm while the molecular field is visible
-  await scrollToEl("#mol", 120);
+  // 7. resize storm while the specimen plate is visible
+  await scrollToEl("#plate", 120);
   await scenario("resize_storm_5s", 5000, async () => {
     const sizes = [[1440, 900], [1100, 800], [820, 1100], [600, 900], [390, 844], [820, 1100], [1440, 900]];
     for (const [w, h] of sizes) { await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(500); }
   });
 
-  // 8. orientation to phone size, molecular idle
+  // 8. orientation to phone size, plate idle
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(800);
-  await scrollToEl("#mol", 80);
+  await scrollToEl("#plate", 80);
   await page.waitForTimeout(600);
-  await scenario("phone_390_molecular_idle_6s", 6000);
+  await scenario("phone_390_plate_idle_6s", 6000);
 
   // init cost: reload and read longest tasks during load
   await page.setViewportSize({ width: 1440, height: 900 });

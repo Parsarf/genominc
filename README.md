@@ -6,7 +6,7 @@ Static site (no build step) plus one serverless function for the enquiry form.
 index.html            home page
 privacy/ terms/       legal pages (served at /privacy/ and /terms/)
 assets/css/site.css   all styles
-assets/js/            main.js (entry), scheduler.js, helix.js, molecular.js, form.js  (native ES modules)
+assets/js/            main.js (entry), scheduler.js, helix.js, plate.js, form.js  (native ES modules)
 assets/fonts, img/    self-hosted Outfit + Figtree (latin), logos
 api/inquiry.js        POST /api/inquiry  → emails the enquiry via Resend
 vercel.json           redirects, cache and security headers (CSP: everything is same-origin)
@@ -37,6 +37,7 @@ node tools/dev-server.cjs 8810 --fake-resend   # site + API wired to a stand-in 
 node tools/dev-server.cjs 8820                  # site + API with NO configuration (failure path)
 NODE_PATH=<dir containing playwright> node tools/e2e.cjs http://localhost:8810 http://localhost:8820
 NODE_PATH=… node tools/perf.cjs http://localhost:8820/ after 4     # frame-time harness, 4× CPU throttle
+# set CHROME_BIN=<chromium executable> if Playwright's own browser build isn't installed
 ```
 
 Deploy by pushing to the Vercel-connected branch; nothing needs building.
