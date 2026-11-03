@@ -2,5 +2,9 @@
   "name": "genominc-site",
   "private": true,
   "description": "Static website for Genominc with one serverless function (api/inquiry.js).",
+  "scripts": {
+    "dev": "node tools/dev-server.cjs 8820",
+    "test": "node --test tools/api-test.cjs"
+  },
   "engines": { "node": ">=20" }
 }

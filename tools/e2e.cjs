@@ -1,5 +1,5 @@
 // node tools/e2e.cjs <configuredBase (fake resend)> <unconfiguredBase>
-const { chromium } = require("playwright");
+const { chromium, firefox } = require("playwright");
 const [OK, NOCFG] = [process.argv[2], process.argv[3]];
 let fails = 0;
 const t = (name, cond, extra) => { console.log((cond ? "PASS " : "FAIL ") + name + (cond ? "" : "  " + (extra || ""))); if (!cond) fails++; };
@@ -8,7 +8,8 @@ const fill = async (p) => {
   await p.fill("#phone", "+971 50 000 0000"); await p.fill("#message", "Need 10 boxes of rapid test kits, delivery to RAK.");
 };
 (async () => {
-  const b = await chromium.launch(process.env.CHROME_BIN ? { executablePath: process.env.CHROME_BIN } : {});
+  const engine = process.env.TEST_BROWSER === "firefox" ? firefox : chromium;
+  const b = await engine.launch({ timeout: 10000, ...(process.env.CHROME_BIN ? { executablePath: process.env.CHROME_BIN } : {}) });
   const mk = async (w = 1280, h = 900) => { const c = await b.newContext({ viewport: { width: w, height: h } }); return c.newPage(); };
 
   // 1 validation
@@ -46,7 +47,7 @@ const fill = async (p) => {
   p = await mk(); await p.goto(NOCFG + "/"); await fill(p); await p.selectOption("#category", "veterinary"); await p.click("#send");
   await p.waitForSelector("#status.bad");
   const txt = await p.textContent("#status");
-  t("unconfigured: says not available + not received", /not available/.test(txt) && /has not received/.test(txt));
+  t("unconfigured: says not available + not received", /not available/.test(txt) && /has not been sent/.test(txt));
   t("unconfigured: NO success text anywhere", !/Enquiry sent|have received your message/.test(await p.textContent("body")));
   t("values preserved", (await p.inputValue("#name")) === "Test Person" && (await p.inputValue("#message")).includes("rapid test") && (await p.inputValue("#category")) === "veterinary");
   const href = await p.getAttribute("#status a.btn", "href");
@@ -59,9 +60,9 @@ const fill = async (p) => {
   await p.waitForSelector("#status.bad"); t("network failure handled, values kept", (await p.inputValue("#email")) === "test@example.org");
 
   // 6 category prefill
-  p = await mk(); await p.goto(OK + "/"); await p.click('.index a[data-category="supplements"]');
+  p = await mk(); await p.goto(OK + "/"); await p.click('.division a[data-category="supplements"]');
   await p.waitForTimeout(700);
-  t("hero category link prefills select", (await p.inputValue("#category")) === "supplements");
+  t("product category link prefills select", (await p.inputValue("#category")) === "supplements");
   t("url carries category, focus moved to form", p.url().includes("category=supplements") && (await p.evaluate(() => document.activeElement.tagName)) === "H3");
   await p.click('.division a[data-category="veterinary"]'); await p.waitForTimeout(500);
   t("division link prefills", (await p.inputValue("#category")) === "veterinary");
@@ -89,6 +90,11 @@ const fill = async (p) => {
   t("primary CTA in first viewport on phone", await p.evaluate(() => { const r = document.querySelector(".hero-actions .btn-primary").getBoundingClientRect(); return r.bottom < innerHeight; }));
   const small = await p.$$eval("a,button,input,select,textarea", (els) => els.filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && (r.height < 40) && !e.closest(".hp") && !e.classList.contains("skip-link") && !(e.tagName === "A" && e.closest("p")); }).map((e) => e.outerHTML.slice(0, 70)));
   t("touch targets >= 40px tall (phone)", small.length === 0, small.join(" | "));
+
+  for (const width of [320, 360, 390, 820, 1440]) {
+    await p.setViewportSize({ width, height: 900 });
+    t("no horizontal overflow at " + width, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  }
 
   // 9 API direct
   const post = (base, body, headers = {}) => fetch(base + "/api/inquiry", { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });

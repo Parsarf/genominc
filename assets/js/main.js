@@ -1,6 +1,3 @@
-import { Scheduler } from "./scheduler.js";
-import { createHelix } from "./helix.js";
-import { createPlate } from "./plate.js";
 import { initForm } from "./form.js";
 
 // Guard against double initialisation (bfcache restores, accidental double includes).
@@ -8,20 +5,7 @@ if (!window.__genominc) {
   window.__genominc = true;
 
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const fine = matchMedia("(pointer: fine)").matches;
   const scroll = { y: window.scrollY || 0 };
-  const root = document.documentElement;
-
-  /* ---------- animation ---------- */
-  const scheduler = new Scheduler();
-  const helixEl = document.getElementById("helix");
-  const plateEl = document.getElementById("plate");
-  const anim = {
-    scheduler,
-    helix: helixEl && createHelix(helixEl, scheduler, { reduced, scroll }),
-    plate: plateEl && createPlate(plateEl, { reduced, fine }),
-  };
-  window.__genominc = anim; // exposed for the performance harness and manual inspection
 
   /* ---------- navigation ---------- */
   const nav = document.getElementById("nav");
@@ -65,17 +49,14 @@ if (!window.__genominc) {
     map.forEach((_, sec) => spy.observe(sec));
   }
 
-  /* ---------- scroll reveal (only when it can actually run) ---------- */
-  if (!reduced && "IntersectionObserver" in window) {
-    root.classList.add("reveal-on");
-    const io = new IntersectionObserver((en) => {
-      for (const e of en) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
-    }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
-    document.querySelectorAll(".rv").forEach((el) => io.observe(el));
-  }
-
   const yr = document.getElementById("yr");
   if (yr) yr.textContent = new Date().getFullYear();
 
   initForm({ reduced });
+
+  // The brand motif is a still frame. Optional artwork must never block navigation or enquiries.
+  const helix = document.getElementById("helix");
+  if (helix) import("./helix.js").then(({ createHelix }) => {
+    window.__genominc = { helix: createHelix(helix, null, { reduced: true, scroll }) };
+  }).catch(() => { /* Core page remains fully usable without the decorative canvas. */ });
 }

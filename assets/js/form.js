@@ -106,10 +106,15 @@ export function initForm({ reduced }) {
       ? "Online enquiries are not available right now."
       : reason === "invalid"
         ? "The server could not accept some of the details you entered."
-        : "Your enquiry could not be sent.";
+        : reason === "rate_limited"
+          ? "Too many enquiries. Please wait 15 minutes before trying again."
+          : "Your enquiry could not be confirmed.";
+    const receipt = ["not_configured", "invalid", "rate_limited"].includes(reason)
+      ? "This enquiry has not been sent."
+      : "We could not confirm delivery. You can retry safely, or contact us directly.";
     show("bad",
       "<strong>" + lead + "</strong>" +
-      "<p>Genominc has not received it. Everything you typed is still in the form. You can email it to us instead, or call " +
+      "<p>" + receipt + " Everything you typed is still in the form. You can email it to us instead, or call " +
       "<a href=\"tel:" + PHONE_TEL + "\">" + PHONE_DISPLAY + "</a>.</p>" +
       "<a class=\"btn btn-secondary\" href=\"" + esc(mailtoHref(data)) + "\">Email this enquiry to " + EMAIL + "</a>");
     status.focus();

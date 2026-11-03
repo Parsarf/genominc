@@ -64,8 +64,8 @@ export function createHelix(canvas, scheduler, { reduced, scroll }) {
     const e = u * u * (3 - 2 * u);
     const spin = T * 0.18 + (reduced ? 0 : y * 0.0009);
 
-    const band = Math.min(190, H * 0.3);                 // the strand lives in a band at the foot of the hero
-    const cy = (H - band * 0.5) + (band * 0.5 - 1) * e;   // and settles on the hero's bottom edge
+    const band = reduced ? Math.min(110, H * 0.8) : Math.min(190, H * 0.3);
+    const cy = reduced ? H * 0.5 : (H - band * 0.5) + (band * 0.5 - 1) * e;
     const amp = band * 0.34 * Math.pow(1 - e, 1.7);
     const waves = (W < 640 ? 1.6 : 2.6) * (1 - e * 0.4);
     layout(waves, e, spin);

@@ -12,8 +12,24 @@
  *   ALLOWED_ORIGINS  optional, comma separated extra origins (defaults to the request's own host)
  *   RESEND_API_URL   optional, test override only
  */
+const { createHash } = require("node:crypto");
 const MAX = { name: 120, company: 160, email: 200, phone: 40, message: 4000 };
 const CATEGORIES = { diagnostics: "Diagnostic systems", supplements: "Supplements", veterinary: "Veterinary", supplier: "Becoming a supplier", other: "Something else" };
+// Best-effort limits within one warm function instance. Deployment-wide abuse protection
+// belongs at the hosting firewall; memory is not shared between serverless instances.
+const WINDOW_MS = 15 * 60 * 1000;
+const attempts = new Map();
+let total = { count: 0, until: 0 };
+function limited(email) {
+  const now = Date.now();
+  for (const [key, item] of attempts) if (item.until <= now) attempts.delete(key);
+  if (total.until <= now) total = { count: 0, until: now + WINDOW_MS };
+  const key = createHash("sha256").update(email.toLowerCase()).digest("hex");
+  const item = attempts.get(key) || { count: 0, until: now + WINDOW_MS };
+  if (total.count >= 100 || item.count >= 5) return true;
+  item.count++; total.count++; attempts.set(key, item);
+  return false;
+}
 
 const clean = (v, max) => (typeof v === "string" ? v.replace(/\r\n?/g, "\n").trim().slice(0, max) : "");
 const oneLine = (v) => v.replace(/[\r\n\u2028\u2029]+/g, " ");
@@ -58,24 +74,32 @@ module.exports = async (req, res) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) fields.email = true;
   if (d.message.length < 10) fields.message = true;
   if (Object.keys(fields).length) return reply(res, 400, { ok: false, error: "invalid", fields });
+  if (limited(d.email)) {
+    res.setHeader("Retry-After", "900");
+    return reply(res, 429, { ok: false, error: "rate_limited" });
+  }
 
   const text = [
     "New website enquiry", "",
     "Name: " + d.name, "Organisation: " + (d.company || "-"), "Email: " + d.email, "Phone: " + (d.phone || "-"),
     "Enquiry about: " + (CATEGORIES[d.category] || "-"), "", d.message,
   ].join("\n");
+  const email = {
+    from: INQUIRY_FROM, to: [INQUIRY_TO], reply_to: d.email,
+    subject: oneLine("Website enquiry: " + (CATEGORIES[d.category] || "General") + " - " + d.name),
+    text,
+  };
+  // Same content + recipient gets the same key, so ambiguous retries cannot send twice.
+  // Resend retains these keys for 24 hours: https://resend.com/docs/dashboard/emails/idempotency-keys
+  const key = "enquiry/" + createHash("sha256").update(JSON.stringify(email)).digest("hex");
 
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 10000);
   try {
     const r = await fetch(process.env.RESEND_API_URL || "https://api.resend.com/emails", {
       method: "POST", signal: ctl.signal,
-      headers: { Authorization: "Bearer " + RESEND_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: INQUIRY_FROM, to: [INQUIRY_TO], reply_to: d.email,
-        subject: oneLine("Website enquiry: " + (CATEGORIES[d.category] || "General") + " - " + d.name),
-        text,
-      }),
+      headers: { Authorization: "Bearer " + RESEND_API_KEY, "Content-Type": "application/json", "Idempotency-Key": key },
+      body: JSON.stringify(email),
     });
     if (!r.ok) return reply(res, 502, { ok: false, error: "delivery_failed" });
     return reply(res, 200, { ok: true });

@@ -117,3 +117,8 @@ Its replacement (`assets/js/plate.js`, SVG + CSS) has no canvas and no `requestA
 and tab autoplay is driven by a CSS progress animation (`animationend`). The numbers above describe the old field and are
 kept as the historical baseline; `tools/levels.cjs` and `tools/forms.cjs` (which measured it) were deleted with it.
 Reduced motion: no animations and no autoplay; tabs still switch figures.
+
+## November 2026 refinement
+The homepage no longer includes the specimen plate. Its helix now uses the existing static
+reduced-motion rendering path for every visitor, with no animation loop or scroll reveal.
+The measurements above remain historical and do not describe the current homepage.
